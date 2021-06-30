@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+default_file="$HOME/speedstats.csv"
+stats="${1:-default_file}"
+
+cmd_missing() {
+  local cmd
+  cmd="$1"
+
+  if command -v "$cmd" &> /dev/null; then
+    false
+  else
+    true
+  fi
+}
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  install_dep() {
+    local package cmd
+    package="$1"
+    cmd="${2:-package}"
+
+    if cmd_missing "$cmd"; then
+      brew install "$package" > /dev/null 2>&1
+    else
+      brew upgrade "$package" > /dev/null 2>&1
+    fi
+  }
+else
+  install_dep() {
+    local package cmd
+    package="$1"
+    cmd="${2:-package}"
+
+    if cmd_missing "$cmd"; then
+      pip install "$package" > /dev/null 2>&1
+    fi
+  }
+fi
+
+install_dep speedtest-cli speedtest
+
+if [ ! -f "$stats" ]; then
+  speedtest --csv-header > "$stats"
+fi
+
+speedtest --share --csv >> "$stats"
